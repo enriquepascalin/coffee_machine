@@ -8,48 +8,63 @@ type CashBox struct {
 
 func NewCashBox(initial map[Denomination]int) CashBox {
 	cloned := make(map[Denomination]int, len(initial))
-	for k, v := range initial {
-		cloned[k] = v
+	for denomination, count := range initial {
+		cloned[denomination] = count
 	}
-	return CashBox{counts: cloned}
+
+	return CashBox{
+		counts: cloned,
+	}
 }
 
-func (c CashBox) Count(d Denomination) int {
-	return c.counts[d]
+func (c *CashBox) Count(denomination Denomination) int {
+	return c.counts[denomination]
 }
 
-func (c CashBox) Total() Cents {
-	var sum Cents
-	for d, n := range c.counts {
-		sum += d.Cents() * Cents(n)
+func (c *CashBox) Total() Cents {
+	var total Cents
+
+	for denomination, count := range c.counts {
+		total += denomination.Cents() * Cents(count)
 	}
-	return sum
+
+	return total
 }
 
-func (c CashBox) Add(d Denomination, n int) error {
-	if n < 0 {
-		return fmt.Errorf("add negative count: %d", n)
+func (c *CashBox) Add(denomination Denomination, count int) error {
+	if count < 0 {
+		return fmt.Errorf("add negative count: %d", count)
 	}
-	c.counts[d] += n
+
+	c.counts[denomination] += count
 	return nil
 }
 
-func (c CashBox) Remove(d Denomination, n int) error {
-	if n < 0 {
-		return fmt.Errorf("remove negative count: %d", n)
+func (c *CashBox) Remove(denomination Denomination, count int) error {
+	if count < 0 {
+		return fmt.Errorf("remove negative count: %d", count)
 	}
-	if c.counts[d] < n {
-		return fmt.Errorf("%w: need %d of %v, have %d", ErrCannotMakeChange, n, d.Cents(), c.counts[d])
+
+	if c.counts[denomination] < count {
+		return fmt.Errorf(
+			"%w: need %d of %v, have %d",
+			ErrCannotMakeChange,
+			count,
+			denomination.Cents(),
+			c.counts[denomination],
+		)
 	}
-	c.counts[d] -= n
+
+	c.counts[denomination] -= count
 	return nil
 }
 
-// Snapshot returns a copy for dry-run decision making.
-func (c CashBox) Snapshot() map[Denomination]int {
-	s := make(map[Denomination]int, len(c.counts))
-	for k, v := range c.counts {
-		s[k] = v
+func (c *CashBox) Snapshot() map[Denomination]int {
+	snapshot := make(map[Denomination]int, len(c.counts))
+
+	for denomination, count := range c.counts {
+		snapshot[denomination] = count
 	}
-	return s
+
+	return snapshot
 }
